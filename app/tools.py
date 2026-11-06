@@ -5,6 +5,7 @@
 """
 
 import json
+import random
 from functools import cache
 from pathlib import Path
 
@@ -77,3 +78,25 @@ def get_lecture_summary(lecture: int) -> str:
         available = sorted(p.stem for p in (DATA_DIR / "lectures").glob("*.md"))
         return f"第{lecture}回の要点はまだありません。用意されている回: {', '.join(available)}"
     return path.read_text(encoding="utf-8")
+
+def make_quiz(lecture: int) -> str:
+    """指定した回の用語から1つ選び、学習内容を確認する問題と答えを返す。
+
+    講義の内容を使った確認問題を求められたときに使う。lecture には回数を
+    整数で指定する（例: 第2回なら 2）。
+    """
+    # 1. load_glossary() からlecture が一致する用語を集める
+    terms = [term for term in load_glossary() if term["lecture"] == lecture]
+    if not terms:
+        return f"第{lecture}回の用語は用語集にありません。"
+    # 2. 1つ選ぶ（random.choice）
+    term = random.choice(terms)
+    # 3. 問題と答えを文字列で返す（jason.dumps など）
+    return f"問題:「{term['term']}」とは何ですか？\n答え: {term['definition']}"
+
+def save_learning_log(lecture: int) -> str:
+    """
+    学習の記録を `learning_log/` に保存する
+    保存の前に利用者の確認を挟む（Pydantic AI の `requires_approval=True`）。TestModel を使ったテストも書く
+    """
+    
