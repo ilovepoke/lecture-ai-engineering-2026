@@ -55,6 +55,24 @@ def test_make_quiz_reports_missing_lecture():
     assert "ありません" in tools.make_quiz(99)
 
 
+def test_save_learning_log_appends_to_lecture_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(tools, "LOG_DIR", tmp_path)
+
+    tools.save_learning_log(3)
+    tools.save_learning_log(3)
+
+    log = (tmp_path / "lecture-03.md").read_text(encoding="utf-8")
+    assert log.count("第3回を学習") == 2
+    assert log.count("- 20") == 2
+
+
+def test_save_learning_log_rejects_nonpositive_lecture(tmp_path, monkeypatch):
+    monkeypatch.setattr(tools, "LOG_DIR", tmp_path)
+
+    assert "1以上" in tools.save_learning_log(0)
+    assert not list(tmp_path.iterdir())
+
+
 def test_default_question_of_lecture1_is_answerable_from_glossary():
     """第1回の既定の質問（app.ask）は、第3回のエージェントが用語集で正しく答えられること。"""
     from app.ask import DEFAULT_QUESTION

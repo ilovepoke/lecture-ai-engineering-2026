@@ -5,9 +5,11 @@ TestModel は実際のLLMを呼ばない偽モデルで、登録されたツー�
 「ツールが登録され、呼ばれ、結果がモデルに戻るか」を確かめられる。
 """
 
+from pydantic_ai import DeferredToolRequests, DeferredToolResults
 from pydantic_ai.messages import ToolCallPart, ToolReturnPart
 from pydantic_ai.models.test import TestModel
 
+from app import tools
 from app.agent import agent
 
 BASE_TOOLS = {"search_glossary", "get_lecture_summary", "make_quiz"}
@@ -18,7 +20,7 @@ def _parts(result, kind):
 
 
 def test_base_tools_are_registered_and_called():
-    model = TestModel()
+    model = TestModel(call_tools=sorted(BASE_TOOLS))
     with agent.override(model=model):
         result = agent.run_sync("LoRAとは？")
 
@@ -37,3 +39,28 @@ def test_glossary_result_reaches_the_model():
         result = agent.run_sync("RAGとは？")
     returns = _parts(result, ToolReturnPart)
     assert returns and returns[0].tool_name == "search_glossary"
+
+
+def test_save_learning_log_waits_for_testmodel_approval(tmp_path, monkeypatch):
+    monkeypatch.setattr(tools, "LOG_DIR", tmp_path)
+    model = TestModel(
+        call_tools=["save_learning_log"],
+        seed=3,
+    )
+    with agent.override(model=model):
+        pending = agent.run_sync("第3回の学習を記録して")
+
+    assert isinstance(pending.output, DeferredToolRequests)
+    assert not list(tmp_path.iterdir())
+
+    approval = pending.output.approvals[0]
+    decisions = DeferredToolResults(approvals={approval.tool_call_id: True})
+    with agent.override(model=TestModel(call_tools=[])):
+        result = agent.run_sync(
+            message_history=pending.all_messages(),
+            deferred_tool_results=decisions,
+        )
+
+    log = (tmp_path / "lecture-03.md").read_text(encoding="utf-8")
+    assert "第3回を学習" in log
+    assert result.output

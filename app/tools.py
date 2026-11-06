@@ -6,10 +6,12 @@
 
 import json
 import random
+from datetime import datetime
 from functools import cache
 from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+LOG_DIR = DATA_DIR.parent / "learning_log"
 MAX_RESULTS = 3
 
 
@@ -95,8 +97,17 @@ def make_quiz(lecture: int) -> str:
     return f"問題:「{term['term']}」とは何ですか？\n答え: {term['definition']}"
 
 def save_learning_log(lecture: int) -> str:
+    """学習した回と日時を `learning_log/` に記録する。
+
+    保存前に利用者の承認が必要。指定した回の記録は、回ごとのファイルに追記する。
     """
-    学習の記録を `learning_log/` に保存する
-    保存の前に利用者の確認を挟む（Pydantic AI の `requires_approval=True`）。TestModel を使ったテストも書く
-    """
+    if lecture < 1:
+        return "回数は1以上で指定してください。"
+
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    path = LOG_DIR / f"lecture-{lecture:02d}.md"
+    timestamp = datetime.now().astimezone().isoformat(timespec="seconds")
+    with path.open("a", encoding="utf-8") as f:
+        f.write(f"- {timestamp}: 第{lecture}回を学習\n")
+    return f"第{lecture}回の学習記録を {path} に保存しました。"
     
