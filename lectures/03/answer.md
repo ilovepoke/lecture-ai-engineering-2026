@@ -9,7 +9,7 @@
                                                     答え: モデルの重みを少ないビット数（例：16ビットから4ビット）で表し、メモリ使用量や計算量を減らす技術。精度は少し下がることがある。…
                                                     [usage] RunUsage(cost=Decimal('0.0004457'), details={'text_prompt_tokens': 894}, input_text_tokens=894, input_tokens=894, output_tokens=71, requests=2, tool_calls=1)
 - 1つの質問での LLM 呼び出し回数（`requests`）：2
-- 追加したツールと、docstring に書いた説明：make_quiz 指定した回の用語から1つ選び、学習内容を確認する問題と答えを返す。
+- 追加したツールと、docstring に書いた説明：make_quiz 指定した回の用語から1つ選び学習内容を確認する問題と答えを返す。
                                                     講義の内容を使った確認問題を求められたときに使う。lecture には回数を
                                                     整数で指定する（例: 第2回なら 2）。
 
